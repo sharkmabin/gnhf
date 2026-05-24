@@ -1,4 +1,4 @@
-<p align="center">Before I go to bed, I tell my agents:</p>
+<p align="center">睡前，我会对我的 agents 说：</p>
 <h1 align="center">good night, have fun</h1>
 
 <p align="center">
@@ -36,61 +36,39 @@
 </p>
 
 <p align="center">
-  <img src="docs/splash.png" alt="gnhf — Good Night, Have Fun" width="800">
+  <img src="docs/splash.png" alt="gnhf - Good Night, Have Fun" width="800">
 </p>
 
-Never wake up empty-handed.
+别空手醒来。
 
-gnhf is a [ralph](https://ghuntley.com/ralph/), [autoresearch](https://github.com/karpathy/autoresearch)-style orchestrator that keeps your agents running while you sleep — each iteration makes one small, committed, documented change towards an objective.
-You wake up to a branch full of clean work and a log of everything that happened.
+`gnhf` 是一个面向代码 Agent 的长时间任务编排工具，灵感来自 [ralph](https://ghuntley.com/ralph/) 和 [autoresearch](https://github.com/karpathy/autoresearch)。它会在你休息时围绕一个目标反复调用 Agent，每一轮完成一个小的、可提交、可追踪的改动。
 
-- **Dead simple** — one command starts an autonomous loop that runs until you request stop or a configured runtime cap is reached
-- **Long running** — each iteration is committed on success, rolled back on failure except commit failures preserved for repair, with sensible retries; retryable hard agent errors back off exponentially while agent-reported failures continue immediately
-- **Live terminal title** — interactive runs keep your terminal title updated with live status, token totals, and commit count, then clear or restore it on exit depending on terminal support; token totals prefixed with `~` are estimates
-- **Exit summary**: every run ends with a permanent summary covering elapsed time, branch, iterations, tokens, branch diff stats, local notes/log paths, and review commands
-- **Agent-agnostic**: works with Claude Code, Codex, Rovo Dev, OpenCode, GitHub Copilot CLI, Pi, or ACP targets out of the box
+你醒来时，会得到一个包含干净提交的分支，以及完整的运行记录。
 
-## Quick Start
+- **一条命令启动**：在 Git 仓库中执行 `gnhf "<目标>"` 即可开始自主循环，直到你请求停止或达到配置的运行上限。
+- **适合长时间运行**：成功迭代会自动提交；普通失败会回滚；提交失败会保留未提交改动交给下一轮修复；可重试的硬错误会指数退避，Agent 主动报告的失败则立即进入下一轮。
+- **实时终端标题**：交互式运行会在终端标题中显示状态、token 总量和提交数量；以 `~` 开头的 token 数表示估算值。
+- **退出摘要**：每次运行结束都会输出分支、耗时、迭代次数、token、diff 统计、日志路径和审查命令。
+- **Agent 无关**：开箱支持 Claude Code、Codex、Rovo Dev、OpenCode、GitHub Copilot CLI、Pi 和 ACP 目标。
 
-```sh
-$ gnhf "reduce complexity of the codebase without changing functionality"
-# have a good sleep
-```
+## 安装
 
-```sh
-$ gnhf "reduce complexity of the codebase without changing functionality" \
-    --max-iterations 10 \
-    --max-tokens 5000000
-# have a good nap
-```
-
-```sh
-# Run multiple agents on the same repo simultaneously using worktrees
-$ gnhf --worktree "implement feature X" &
-$ gnhf --worktree "add tests for module Y" &
-$ gnhf --worktree "refactor the API layer" &
-```
-
-```sh
-# Commit directly on the current branch and push after each successful iteration
-$ gnhf --current-branch --push "keep improving this app"
-```
-
-Run `gnhf` from inside a Git repository with a clean working tree. If you are starting from a plain directory, run `git init` first.
-`gnhf` supports macOS, Linux, and Windows.
-
-## Install
-
-**npm**
+### 使用 npm
 
 ```sh
 npm install -g gnhf
 ```
 
-**From source**
+安装后检查命令是否可用：
 
 ```sh
-git clone https://github.com/kunchenguid/gnhf.git
+gnhf --version
+```
+
+### 从源码安装
+
+```sh
+git clone git@github.com:sharkmabin/gnhf.git
 cd gnhf
 corepack enable
 pnpm install
@@ -98,33 +76,71 @@ pnpm run build
 pnpm link --global
 ```
 
+项目要求 Node.js 20 或更高版本，支持 macOS、Linux 和 Windows。
+
+## 快速开始
+
+进入一个干净的 Git 仓库后运行：
+
+```sh
+gnhf "在不改变功能的前提下降低代码复杂度"
+```
+
+限制迭代次数和 token：
+
+```sh
+gnhf "在不改变功能的前提下降低代码复杂度" \
+  --max-iterations 10 \
+  --max-tokens 5000000
+```
+
+并行启动多个 Agent，可以使用 worktree 模式：
+
+```sh
+gnhf --worktree "实现功能 X" &
+gnhf --worktree "为模块 Y 添加测试" &
+gnhf --worktree "重构 API 层" &
+```
+
+直接在当前分支运行，并在每次成功迭代后推送：
+
+```sh
+gnhf --current-branch --push "继续改进这个应用"
+```
+
+`gnhf` 需要在 Git 仓库内运行，并且默认要求工作区干净。如果当前目录还不是仓库，请先执行：
+
+```sh
+git init
+```
+
 ## Agent Skill
 
-The npm package includes an agent-facing skill at `skills/gnhf/SKILL.md`. Agents that support local skills can copy or reference this file to learn how to run GNHF in Hands-Off mode for bounded overnight work, or Companion mode when the outer agent should steer and review a long-running GNHF run.
+npm 包内置一个给 Agent 使用的 skill，路径为 `skills/gnhf/SKILL.md`。支持本地 skill 的 Agent 可以复制或引用这个文件，学习如何以 Hands-Off 模式运行有边界的夜间任务，或以 Companion 模式监督、引导和审查一次长时间的 GNHF 运行。
 
-After installing from npm, the skill is available under the installed package directory. From a source checkout, use `skills/gnhf/SKILL.md` directly.
+从 npm 安装后，skill 位于已安装包目录中；从源码检出时，可以直接使用 `skills/gnhf/SKILL.md`。
 
-## How It Works
+## 工作机制
 
-```
+```text
                     ┌─────────────┐
                     │  gnhf start │
                     └──────┬──────┘
                            ▼
                 ┌──────────────────────┐
                 │  validate clean git  │
-                │  create or use branch │
+                │  create or use branch│
                 │  write prompt.md     │
                 └──────────┬───────────┘
                            ▼
               ┌────────────────────────────┐
               │  build iteration prompt    │◄──────────────┐
-              │  (inject notes.md context) │               │
+              │  inject notes.md context   │               │
               └────────────┬───────────────┘               │
                            ▼                               │
               ┌────────────────────────────┐               │
               │  invoke your agent         │               │
-              │  (non-interactive mode)    │               │
+              │  non-interactive mode      │               │
               └────────────┬───────────────┘               │
                            ▼                               │
                     ┌─────────────┐                        │
@@ -134,7 +150,7 @@ After installing from npm, the skill is available under the installed package di
                        ▼      ▼                            │
               ┌──────────┐  ┌───────────┐                  │
               │  commit  │  │ reset or  │                  │
-              │  append  │  │  repair   │                  │
+              │  append  │  │ repair    │                  │
               │ notes.md │  │ maybe wait│                  │
               └────┬─────┘  └─────┬─────┘                  │
                    │              │                        │
@@ -150,86 +166,107 @@ After installing from npm, the skill is available under the installed package di
                     └──────────────────────────────────────┘
 ```
 
-- **Incremental commits** - each successful iteration is a separate unsigned git commit, so you can cherry-pick or revert individual changes without GPG or SSH signing prompts blocking the run; if `git commit` fails, gnhf preserves the uncommitted work and asks the next agent iteration to repair it
-- **Failure handling** - failed iterations are rolled back with `git reset --hard` except commit failures, which preserve uncommitted work for repair; agent-reported failures proceed to the next iteration immediately, retryable hard agent errors use exponential backoff, and permanent agent errors such as Claude low credit balance abort immediately and print the run log path. Complete no-op iterations are reported as failures and count toward the consecutive-failure abort limit. If the run exits with a pending commit failure, the exit summary warns that uncommitted changes were left for repair.
-- **Runtime caps** - `--max-iterations` stops before the next iteration begins, `--max-tokens` can abort mid-iteration once reported usage reaches the cap, and `--stop-when` ends the loop after an iteration whose agent output reports the natural-language condition is met unless a commit failure needs repair first; resumed runs reuse the saved stop condition unless you pass a new value, or `--stop-when ""` to clear it; pending commit-failure repair work is preserved and other uncommitted work is rolled back, and in the interactive TUI the final state remains visible until you press Ctrl+C to exit
-- **Iteration finalization** - agents are expected to finish validation, stop any background processes they started, and only then emit the final JSON result for the iteration
-- **Graceful interrupts** - in the interactive TUI, the first Ctrl+C requests a graceful stop and lets the current iteration finish (or ends backoff early), the second Ctrl+C force-stops immediately, and `SIGTERM` also force-stops immediately
-- **Exit summary** - after shutdown cleanup, gnhf prints a permanent stdout summary with the final branch, elapsed time, iteration and token totals, branch diff stats, notes/debug-log paths, and review commands
-- **Shared memory** — the agent reads `notes.md` (built up from prior iterations) to communicate across iterations
-- **Local run metadata** — gnhf stores prompt, notes, stop conditions, and commit-message convention metadata under `.gnhf/runs/` and ignores it locally, so your branch only contains intentional work
-- **Resume support** — run `gnhf` while on an existing `gnhf/` branch to pick up where a previous run left off; if you provide a different prompt, gnhf asks whether to update the saved prompt and continue with the existing history, start a new branch, or quit. New runs whose generated branch already exists use a numeric suffix such as `gnhf/<slug>-1`.
+- **增量提交**：每次成功迭代都会生成一个独立的未签名 Git commit，便于 cherry-pick 或 revert。若 `git commit` 失败，`gnhf` 会保留未提交改动，并要求下一轮 Agent 修复。
+- **失败处理**：普通失败会使用 `git reset --hard` 回滚本轮改动；提交失败除外，会保留现场。连续失败达到上限或出现永久性 Agent 错误时会中止。完全没有改动的迭代会被视为失败。
+- **运行上限**：`--max-iterations` 会在下一轮开始前停止；`--max-tokens` 可在本轮中达到上限后中止；`--stop-when` 会在 Agent 输出满足自然语言条件后停止。
+- **迭代收尾**：Agent 应该完成验证、停止自己启动的后台进程，然后再输出本轮最终 JSON 结果。
+- **优雅中断**：交互式 TUI 中第一次 Ctrl+C 请求优雅停止，等待当前迭代完成；第二次 Ctrl+C 立即强制停止；`SIGTERM` 也会强制停止。
+- **共享记忆**：Agent 会读取由前序迭代累积的 `notes.md`，用于跨轮沟通。
+- **本地运行元数据**：`gnhf` 会把 prompt、notes、停止条件和 commit message 约定保存到 `.gnhf/runs/`，这些内容默认只用于本地恢复和调试。
+- **恢复支持**：在已有 `gnhf/` 分支上再次运行 `gnhf` 可以继续之前的任务。如果传入不同 prompt，`gnhf` 会询问是更新保存的 prompt 继续、创建新分支，还是退出。
 
-### Live Branch Mode
+## 常用模式
 
-Pass `--current-branch` to run on the branch you are already on instead of creating a `gnhf/` branch.
-Pass `--push` to push the current branch after each successful iteration.
-Together, `--current-branch --push` is useful for loose projects where you want a deployed or locally watched branch to update throughout the run.
+### 默认分支模式
 
-- Re-running the same prompt with `--current-branch` resumes the existing `.gnhf/runs/<runId>/` history on a clean working tree and continues iteration numbering.
-- Push failures abort the run after preserving the successful local commit.
-- gnhf never force-pushes or auto-pulls for this mode.
-- `--push` also works with the default `gnhf/` branch mode and sets `origin` as the upstream when needed.
-- Do not combine `--current-branch` with `--worktree`; gnhf exits with an error because those modes choose different working directories.
+默认情况下，`gnhf` 会创建 `gnhf/<任务摘要>` 分支，并在该分支上持续提交。
 
-### Worktree Mode
-
-Pass `--worktree` to run each agent in an isolated [git worktree](https://git-scm.com/docs/git-worktree). This lets you launch multiple agents on the same repo simultaneously — each gets its own working directory and branch without interfering with the others or your main checkout.
-
+```sh
+gnhf "重构 API 层并保持现有行为"
 ```
-<repo>/                              ← your repo (unchanged)
+
+如果生成的分支已存在，新运行会使用 `gnhf/<任务摘要>-1` 这样的数字后缀。
+
+### 当前分支模式
+
+传入 `--current-branch` 可以直接在当前分支运行：
+
+```sh
+gnhf --current-branch "继续改进这个应用"
+```
+
+配合 `--push` 时，每次成功迭代后会推送当前分支：
+
+```sh
+gnhf --current-branch --push "继续改进这个应用"
+```
+
+注意：
+
+- 重新以相同 prompt 运行 `--current-branch` 会复用已有 `.gnhf/runs/<runId>/` 历史，并继续迭代编号。
+- 推送失败会中止运行，但成功的本地提交会被保留。
+- `gnhf` 不会自动 force push，也不会自动 pull。
+- `--push` 也可用于默认的 `gnhf/` 分支模式，并会在需要时设置 `origin` 为 upstream。
+- `--current-branch` 不能与 `--worktree` 同时使用。
+
+### Worktree 模式
+
+传入 `--worktree` 可以让每个 Agent 在独立的 [Git worktree](https://git-scm.com/docs/git-worktree) 中运行。这样可以在同一个仓库上并行启动多个任务，互不干扰。
+
+```text
+<repo>/
 <repo>-gnhf-worktrees/
-  ├── <run-slug-1>/                  ← worktree for agent 1
-  └── <run-slug-2>/                  ← worktree for agent 2
+  ├── <run-slug-1>/
+  └── <run-slug-2>/
 ```
 
-- Worktrees with commits are **preserved** after the run so you can review, merge, or cherry-pick the work. gnhf prints the path and cleanup command.
-- Re-running the same prompt with `--worktree` resumes a preserved matching worktree when possible; otherwise gnhf creates a suffixed worktree such as `<run-slug>-1` if the original name is unavailable.
-- Worktrees with **no commits** are automatically removed on exit unless a pending commit failure left uncommitted work to inspect or repair.
-- `--worktree` must be run from a non-gnhf branch (typically `main`).
+- 有提交的 worktree 会在运行结束后保留，方便审查、合并或 cherry-pick。
+- 重新以同一 prompt 运行 `--worktree` 时，会尽量恢复匹配的已保留 worktree，否则创建带数字后缀的新 worktree。
+- 没有产生提交的 worktree 通常会在退出时自动清理，除非有提交失败留下的未提交改动需要检查或修复。
+- `--worktree` 应该从非 `gnhf/` 分支运行，通常是 `main`。
 
-## CLI Reference
+## 命令参考
 
-| Command                   | Description                                     |
-| ------------------------- | ----------------------------------------------- |
-| `gnhf "<prompt>"`         | Start a new run with the given objective        |
-| `gnhf`                    | Resume a run (when on an existing gnhf/ branch) |
-| `echo "<prompt>" \| gnhf` | Pipe prompt via stdin                           |
-| `cat prd.md \| gnhf`      | Pipe a large spec or PRD via stdin              |
+| 命令 | 说明 |
+| --- | --- |
+| `gnhf "<prompt>"` | 使用给定目标启动新运行 |
+| `gnhf` | 在已有 `gnhf/` 分支上恢复运行 |
+| `echo "<prompt>" \| gnhf` | 从标准输入传入 prompt |
+| `cat prd.md \| gnhf` | 从文件传入较长规格或 PRD |
 
-If you run `gnhf` on an existing `gnhf/` branch with a different prompt, gnhf asks whether to update `prompt.md` and continue the existing run history, start a new branch, or quit. When the prompt came from stdin, that confirmation is read from the controlling terminal, so it must be available.
+如果在已有 `gnhf/` 分支上用不同 prompt 运行，`gnhf` 会询问是更新 `prompt.md` 并继续现有历史、创建新分支，还是退出。当 prompt 来自 stdin 时，确认输入会从控制终端读取，因此需要有可用的交互终端。
 
-### Flags
+### 参数
 
-| Flag                     | Description                                                                                            | Default                |
-| ------------------------ | ------------------------------------------------------------------------------------------------------ | ---------------------- |
-| `--agent <agent>`        | Agent to use (`claude`, `codex`, `rovodev`, `opencode`, `copilot`, `pi`, or `acp:<target-or-command>`) | config file (`claude`) |
-| `--max-iterations <n>`   | Abort after `n` total iterations                                                                       | unlimited              |
-| `--max-tokens <n>`       | Abort after `n` total input+output tokens                                                              | unlimited              |
-| `--stop-when <cond>`     | End when the agent reports this condition, after any commit-failure repair; persists across resume     | unlimited              |
-| `--prevent-sleep <mode>` | Prevent system sleep during the run (`on`/`off` or `true`/`false`)                                     | config file (`on`)     |
-| `--worktree`             | Run in a separate git worktree (enables multiple agents concurrently)                                  | `false`                |
-| `--current-branch`       | Run on the current branch instead of creating a `gnhf/` branch                                         | `false`                |
-| `--push`                 | Push the current branch after each successful iteration                                                | `false`                |
-| `--meteor-frequency <n>` | Set TUI meteor frequency from 0 to 5 (`0` disables meteors)                                            | `3`                    |
-| `--version`              | Show version                                                                                           |                        |
+| 参数 | 说明 | 默认值 |
+| --- | --- | --- |
+| `--agent <agent>` | 指定 Agent，可选 `claude`、`codex`、`rovodev`、`opencode`、`copilot`、`pi` 或 `acp:<target-or-command>` | 配置文件，默认 `claude` |
+| `--max-iterations <n>` | 最多运行多少轮迭代 | 不限制 |
+| `--max-tokens <n>` | 输入和输出 token 总量达到上限后停止 | 不限制 |
+| `--stop-when <条件>` | 当 Agent 报告满足条件后停止；恢复运行时继续生效 | 不限制 |
+| `--prevent-sleep <mode>` | 运行期间阻止系统睡眠，支持 `on`、`off`、`true`、`false` | 配置文件，默认 `on` |
+| `--worktree` | 使用独立 Git worktree 运行 | `false` |
+| `--current-branch` | 在当前分支运行，而不是创建 `gnhf/` 分支 | `false` |
+| `--push` | 每次成功提交后推送 | `false` |
+| `--meteor-frequency <n>` | 设置 TUI 流星动画频率，范围 0 到 5，`0` 表示关闭 | `3` |
+| `--version` | 输出版本号 |  |
 
-## Configuration
+## 配置
 
-Config lives at `~/.gnhf/config.yml`:
+配置文件位于 `~/.gnhf/config.yml`：
 
 ```yaml
-# Agent to use by default (claude, codex, rovodev, opencode, copilot, pi, or acp:<target-or-command>)
+# 默认使用的 Agent：claude、codex、rovodev、opencode、copilot、pi 或 acp:<target-or-command>
 agent: claude
 
-# Custom paths to native agent binaries (optional)
+# 自定义原生 Agent 可执行文件路径，可选
 # agentPathOverride:
 #   claude: /path/to/custom-claude
 #   codex: /path/to/custom-codex
 #   copilot: /path/to/custom-copilot
 #   pi: /path/to/custom-pi
 
-# Native agent CLI arg overrides (optional)
+# 自定义原生 Agent CLI 参数，可选
 # agentArgsOverride:
 #   codex:
 #     - -m
@@ -248,47 +285,43 @@ agent: claude
 #     - --thinking
 #     - high
 
-# Custom ACP target commands (optional)
+# 自定义 ACP 目标命令，可选
 # acpRegistryOverrides:
 #   my-fork: "/usr/local/bin/my-claude-code-fork --acp"
 #   staging: "node /opt/staging/agent.mjs"
 
-# Commit message convention (optional)
-# Defaults to: gnhf <iteration>: <summary>
-# Use the conventional preset for semantic-release compatible headers:
+# Commit message 约定，可选
+# 默认：gnhf <iteration>: <summary>
+# 使用 conventional preset 可生成 semantic-release 兼容标题：
 # commitMessage:
 #   preset: conventional
 
-# Abort after this many consecutive failures
+# 连续失败达到该次数后中止
 maxConsecutiveFailures: 3
 
-# Prevent the machine from sleeping during a run
+# 运行期间阻止系统睡眠
 preventSleep: true
 ```
 
-If the file does not exist yet, `gnhf` creates it on first run using the resolved defaults.
+如果配置文件不存在，`gnhf` 会在首次运行时按解析后的默认值创建。
 
-CLI flags override config file values. `--prevent-sleep` accepts `on`/`off` as well as `true`/`false`; the config file always uses a boolean.
-The iteration and token caps are runtime-only flags and are not persisted in `config.yml`; `--stop-when` is persisted per run for resume, but not in config.
+命令行参数优先级高于配置文件。`--prevent-sleep` 接受 `on`、`off`、`true`、`false`；配置文件中始终使用布尔值。迭代次数和 token 上限只作为运行时参数，不会持久化到 `config.yml`。`--stop-when` 会按单次运行持久化，供恢复时继续使用。
 
-`agentArgsOverride.<name>` lets you pass through extra CLI flags for native agents (`claude`, `codex`, `rovodev`, `opencode`, `copilot`, or `pi`).
-ACP targets do not support path or arg overrides in this version.
-Use `acpRegistryOverrides` to map `acp:<target>` names to custom spawn commands for local, forked, or beta ACP agents.
-You can also pass a raw custom ACP server command directly as a quoted `acp:` spec, for example `gnhf --agent 'acp:./bin/dev-acp --profile ci' "fix the tests"`.
+`agentArgsOverride.<name>` 可为原生 Agent 传入额外 CLI 参数，例如模型、profile 或 reasoning 设置。ACP 目标本版本不支持 path 或 arg override，请使用 `acpRegistryOverrides` 映射 `acp:<target>` 名称到自定义启动命令，也可以直接传入带引号的自定义 ACP server 命令：
 
-- Use it for agent-specific options like models, profiles, or reasoning settings without adding a dedicated `gnhf` config field for each one.
-- For `codex`, `claude`, and `copilot`, `gnhf` adds its usual non-interactive permission default only when you do not provide your own permission or execution-mode flag. If you set one explicitly, `gnhf` treats that as user-managed and does not add its default on top.
-- Flags that `gnhf` manages itself for a given agent, such as output-shaping or local-server startup flags, are rejected during config loading so you get a clear error instead of duplicate-argument ambiguity. For `pi` specifically, `--api-key` is also blocked; configure the Pi API key via Pi's own config or the environment variable it reads, not via `agentArgsOverride`.
+```sh
+gnhf --agent 'acp:./bin/dev-acp --profile ci' "修复测试"
+```
 
-`commitMessage` controls the subject line that gnhf uses for each successful iteration commit.
+`commitMessage` 控制每次成功迭代的 commit subject：
 
-- Omit it to keep the default `gnhf <iteration>: <summary>` format.
-- Set `preset: conventional` to ask the agent for `type` and optional `scope`, then commit as `type(scope): summary` for semantic-release style workflows. Valid types are `build`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `test`, and `chore`; invalid or missing types fall back to `chore`, and empty scopes are omitted.
-- The resolved commit-message convention is saved per run, so resuming keeps the original subject format even if `config.yml` changes later.
+- 省略时使用默认格式 `gnhf <iteration>: <summary>`。
+- 设置 `preset: conventional` 后，Agent 会提供 `type` 和可选 `scope`，最终生成 `type(scope): summary`。有效类型包括 `build`、`ci`、`docs`、`feat`、`fix`、`perf`、`refactor`、`test` 和 `chore`。
+- 已解析的 commit message 约定会随运行保存，恢复运行时会沿用原来的格式，即使之后 `config.yml` 发生变化。
 
-### Custom Agent Paths
+### 自定义 Agent 路径
 
-Use `agentPathOverride` to point any native agent at a custom binary - useful for wrappers like Claude Code Switch or custom Codex builds that accept the same flags and arguments as the original:
+`agentPathOverride` 可把原生 Agent 指向自定义二进制，适合 Claude Code Switch 或自定义 Codex 包装器等场景：
 
 ```yaml
 agentPathOverride:
@@ -298,47 +331,89 @@ agentPathOverride:
   pi: ~/bin/pi-wrapper
 ```
 
-Paths may be absolute, bare executable names already on your `PATH`, `~`-prefixed, or relative to the config directory (`~/.gnhf/`). The override replaces only the binary name; all standard arguments are preserved, so the replacement must be CLI-compatible with the original agent. On Windows, `.cmd` and `.bat` wrappers are supported, including bare names resolved from `PATH`. For `rovodev`, the override must point to an `acli`-compatible binary since gnhf invokes it as `<bin> rovodev serve ...`.
-When sleep prevention is enabled, `gnhf` uses the native mechanism for your OS: `caffeinate` on macOS, `systemd-inhibit` on Linux, and a small PowerShell helper backed by `SetThreadExecutionState` on Windows.
+路径可以是绝对路径、`PATH` 中已有的可执行文件名、以 `~` 开头的路径，或相对于配置目录 `~/.gnhf/` 的路径。该 override 只替换二进制名称，标准参数仍由 `gnhf` 保留，因此替代程序必须与原 Agent CLI 兼容。Windows 上支持 `.cmd` 和 `.bat` 包装器。对 `rovodev` 来说，override 必须指向兼容 `acli` 的二进制，因为 `gnhf` 会以 `<bin> rovodev serve ...` 方式调用。
 
-## Debug Logs
+启用防睡眠时，`gnhf` 会使用系统原生机制：macOS 使用 `caffeinate`，Linux 使用 `systemd-inhibit`，Windows 使用基于 `SetThreadExecutionState` 的 PowerShell helper。
 
-Every run writes a JSONL debug log to `.gnhf/runs/<runId>/gnhf.log` alongside `notes.md`. Lifecycle events for the orchestrator, agent, and HTTP requests are captured with elapsed timings and (for failures) the full `error.cause` chain, which is what you need to tell a bare `TypeError: fetch failed` apart from an undici `UND_ERR_HEADERS_TIMEOUT`. The agent's own streaming output still goes to the per-iteration `iteration-<n>.jsonl` file next to it.
-Raw ACP command specs are redacted as `acp:custom`/`custom` in debug logs and related errors, so local paths or secrets in custom commands are not written to `gnhf.log`.
+## 调试日志
 
-Including a snippet of `gnhf.log` is the single most useful thing you can attach when filing an issue.
+每次运行都会在 `.gnhf/runs/<runId>/gnhf.log` 写入 JSONL 调试日志，并在同目录保存 `notes.md`。日志会记录 orchestrator、Agent 和 HTTP 请求的生命周期事件、耗时，以及失败时完整的 `error.cause` 链。Agent 自身的流式输出会写到相邻的 `iteration-<n>.jsonl`。
 
-## Telemetry
+原始 ACP 自定义命令会在调试日志和相关错误中被脱敏为 `acp:custom` 或 `custom`，避免把本地路径或秘密写入 `gnhf.log`。
 
-`gnhf` sends anonymous usage telemetry to my self-hosted analytics so I can see what's actually getting used.
-No prompts, repo paths, or branch names are sent.
-Set `GNHF_TELEMETRY=0` to turn it off.
+提交 issue 时，附上一段相关 `gnhf.log` 通常最有帮助。
 
-## Agents
+## 遥测
 
-`gnhf` supports six native agents plus ACP targets. ACP support is powered by [`acpx`](https://github.com/openclaw/acpx), which is bundled with `gnhf` and provides the runtime and agent registry for `acp:<target-or-command>` specs.
+`gnhf` 会向作者自托管的分析服务发送匿名使用遥测，用于了解功能使用情况。不会发送 prompt、仓库路径或分支名。
 
-| Agent              | Flag                              | Requirements                                                                                                                                                                        | Notes                                                                                                                                                                                                                                                                                                       |
-| ------------------ | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Claude Code        | `--agent claude`                  | Install Anthropic's `claude` CLI and sign in first.                                                                                                                                 | `gnhf` invokes `claude` directly in non-interactive mode. After Claude emits a successful structured result, `gnhf` treats that result as final and shuts down any lingering Claude process tree after a short grace period.                                                                                |
-| Codex              | `--agent codex`                   | Install OpenAI's `codex` CLI and sign in first.                                                                                                                                     | `gnhf` invokes `codex exec` directly in non-interactive mode.                                                                                                                                                                                                                                               |
-| GitHub Copilot CLI | `--agent copilot`                 | Install GitHub Copilot CLI and sign in first.                                                                                                                                       | `gnhf` invokes `copilot` directly in non-interactive JSONL mode. Copilot currently exposes assistant output tokens, but not full input/cache token totals; see https://github.com/github/copilot-cli/issues/1152.                                                                                           |
-| Pi                 | `--agent pi`                      | Install the `pi` CLI and configure a usable provider/model first.                                                                                                                   | `gnhf` invokes `pi` directly in JSON mode, appends the final output schema to the prompt, and disables Pi session persistence with `--no-session`.                                                                                                                                                          |
-| Rovo Dev           | `--agent rovodev`                 | Install Atlassian's `acli` and authenticate it with Rovo Dev first.                                                                                                                 | `gnhf` starts a local `acli rovodev serve --disable-session-token <port>` process automatically in the repo workspace.                                                                                                                                                                                      |
-| OpenCode           | `--agent opencode`                | Install `opencode` and configure at least one usable model provider first.                                                                                                          | `gnhf` starts a local `opencode serve --hostname 127.0.0.1 --port <port> --print-logs` process automatically, creates a per-run session, and applies a blanket allow rule so tool calls do not block on prompts.                                                                                            |
-| ACP target         | `--agent acp:<target-or-command>` | Install and authenticate the target supported by the bundled [`acpx`](https://github.com/openclaw/acpx) registry, such as `acp:gemini`, or pass a quoted custom ACP server command. | `gnhf` runs the target through ACP with a persistent per-run session under `.gnhf/runs/<runId>/acp-sessions`; token usage and `--max-tokens` use ACP `used` deltas when available, with prompt-length plus tool-call estimates as a fallback, and `agentPathOverride` and `agentArgsOverride` do not apply. |
-
-## Development
-
-If you want to contribute changes back to this repo, see [`CONTRIBUTING.md`](./CONTRIBUTING.md). Human-authored PRs targeting `main` must be opened via `git push no-mistakes` so the required `Require no-mistakes` check passes.
+如需关闭：
 
 ```sh
-pnpm run build          # Build with tsdown
-pnpm run dev            # Watch mode
-pnpm test               # Build, then run all tests (vitest)
-pnpm run test:e2e       # Build, then run end-to-end tests against the mock opencode executable
+GNHF_TELEMETRY=0
+```
+
+## 支持的 Agent
+
+`gnhf` 支持六种原生 Agent 和 ACP 目标。ACP 支持由内置的 [`acpx`](https://github.com/openclaw/acpx) 提供，负责 `acp:<target-or-command>` 规格的运行时和 Agent 注册表。
+
+| Agent | 参数 | 前置要求 | 说明 |
+| --- | --- | --- | --- |
+| Claude Code | `--agent claude` | 安装 Anthropic `claude` CLI 并先登录 | `gnhf` 会以非交互模式直接调用 `claude`。Claude 输出成功的结构化结果后，`gnhf` 会把该结果视为最终结果，并在短暂宽限期后关闭残留的 Claude 进程树。 |
+| Codex | `--agent codex` | 安装 OpenAI `codex` CLI 并先登录 | `gnhf` 会以非交互模式直接调用 `codex exec`。 |
+| GitHub Copilot CLI | `--agent copilot` | 安装 GitHub Copilot CLI 并先登录 | `gnhf` 会以 JSONL 模式直接调用 `copilot`。Copilot 当前暴露 assistant 输出 token，但不暴露完整 input/cache token 总量。 |
+| Pi | `--agent pi` | 安装 `pi` CLI 并先配置可用 provider/model | `gnhf` 会以 JSON 模式调用 `pi`，把最终输出 schema 附加到 prompt，并通过 `--no-session` 禁用 Pi session 持久化。 |
+| Rovo Dev | `--agent rovodev` | 安装 Atlassian `acli` 并完成 Rovo Dev 认证 | `gnhf` 会在仓库工作区自动启动本地 `acli rovodev serve --disable-session-token <port>` 进程。 |
+| OpenCode | `--agent opencode` | 安装 `opencode` 并配置至少一个可用模型提供方 | `gnhf` 会自动启动本地 `opencode serve --hostname 127.0.0.1 --port <port> --print-logs`，创建每次运行的 session，并应用允许规则避免工具调用阻塞。 |
+| ACP 目标 | `--agent acp:<target-or-command>` | 安装并认证内置 `acpx` 注册表支持的目标，或传入带引号的自定义 ACP server 命令 | `gnhf` 会通过 ACP 运行目标，并在 `.gnhf/runs/<runId>/acp-sessions` 保存每次运行的持久 session。 |
+
+## 本地开发
+
+贡献代码前请阅读 [CONTRIBUTING.md](./CONTRIBUTING.md)。面向 `main` 的人工 PR 必须通过 `git push no-mistakes` 打开，以满足必需的 `Require no-mistakes` 检查。
+
+常用命令：
+
+```sh
+corepack enable
+pnpm install
+
+pnpm run build          # 使用 tsdown 构建
+pnpm run dev            # 监听构建
+pnpm test               # 构建后运行全部 vitest 测试
+pnpm run test:e2e       # 构建后运行端到端测试
 pnpm run lint           # ESLint
-pnpm run format         # Prettier
+pnpm run format:check   # 检查 Prettier 格式
+pnpm run typecheck      # TypeScript 类型检查
+```
+
+## 故障排查
+
+### 提示不是 Git 仓库
+
+进入已有 Git 仓库，或先执行：
+
+```sh
+git init
+```
+
+### 工作区不干净
+
+默认模式要求工作区干净。请先提交、暂存或清理当前改动，再运行：
+
+```sh
+git status
+```
+
+### Agent 启动失败
+
+确认对应 Agent CLI 已安装、位于 `PATH` 中，并且已经完成登录或模型配置。
+
+### 需要查看详细错误
+
+查看本地运行日志：
+
+```sh
+cat .gnhf/runs/<runId>/gnhf.log
 ```
 
 ## Star History
@@ -350,3 +425,7 @@ pnpm run format         # Prettier
    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=kunchenguid/gnhf&type=date&legend=top-left" />
  </picture>
 </a>
+
+## 许可证
+
+本项目使用 MIT License，详情见 [LICENSE](./LICENSE)。
